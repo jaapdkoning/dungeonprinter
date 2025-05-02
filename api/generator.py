@@ -9,7 +9,6 @@ client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 SYSTEM_PROMPT = "You are a creative and evocative old-school RPG dungeon master."
 
-
 def generate_room_with_llm(theme="Undead Crypt", model="gpt-3.5-turbo"):
     theme_data = themes.get(theme, {})
     theme_description = theme_data.get("description", "")
@@ -48,23 +47,23 @@ Keep the tone in the style of old-school fantasy. Use at most 100 words.
     tokens_used = response.usage.total_tokens
     return content, tokens_used
 
-
 def generate_encounters_with_llm(theme="Unknown Theme", model="gpt-3.5-turbo"):
     user_prompt = f"""
 Generate 4 unique fantasy RPG encounters for the theme: {theme}.
 
-Each encounter must be classified as one of:
+Each encounter must be one of:
 - combat
 - social
 - puzzle
 
-For each encounter, output:
-- title (one line)
-- type (combat / social / puzzle)
-- description (2–4 sentences)
+For each encounter, provide the following fields:
+- title: one line
+- type: combat | social | puzzle
+- situation: the setup or scene
+- challenge: what the players must overcome
+- reward: what the players may gain
 
-Respond in JSON as an array of objects with: title, type, description.
-Wrap only the JSON in your response.
+Respond in pure JSON, structured as an array of 4 objects with these fields.
 """
 
     response = client.chat.completions.create(
@@ -74,7 +73,7 @@ Wrap only the JSON in your response.
             {"role": "user", "content": user_prompt}
         ],
         temperature=1.0,
-        max_tokens=500,
+        max_tokens=800,
     )
 
     content = response.choices[0].message.content.strip()
@@ -95,7 +94,9 @@ Wrap only the JSON in your response.
         parsed = [{
             "title": "Parse Error",
             "type": "unknown",
-            "description": content
+            "situation": "",
+            "challenge": "",
+            "reward": content
         }]
 
     return parsed, response.usage.total_tokens

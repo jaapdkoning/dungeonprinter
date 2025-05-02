@@ -21,11 +21,10 @@
         :key="index"
         class="encounter"
       >
-        <h3>
-          {{ encounter.title }}
-          <span class="type">[{{ encounter.type }}]</span>
-        </h3>
-        <p>{{ encounter.description }}</p>
+        <h3>{{ encounter.title }} <span class="type">[{{ encounter.type }}]</span></h3>
+        <p><strong>Situation:</strong> {{ encounter.situation }}</p>
+        <p><strong>Challenge:</strong> {{ encounter.challenge }}</p>
+        <p><strong>Reward:</strong> {{ encounter.reward }}</p>
       </div>
     </div>
   </div>
