@@ -79,10 +79,15 @@ Wrap only the JSON in your response.
 
     content = response.choices[0].message.content.strip()
 
-    # Strip markdown-style code block if present
+    # Step 1: Strip markdown-style code block if present
     if content.startswith("```json") or content.startswith("```"):
-        content = re.sub(r"^```(?:json)?\\s*", "", content)
-        content = re.sub(r"```\\s*$", "", content)
+        content = re.sub(r"^```(?:json)?\s*", "", content)
+        content = re.sub(r"\s*```\s*$", "", content)
+
+    # Step 2: Extract JSON array if nested in text
+    match = re.search(r"(\[\s*{.*?}\s*\])", content, re.DOTALL)
+    if match:
+        content = match.group(1)
 
     try:
         parsed = json.loads(content)
