@@ -10,3 +10,8 @@ services:
     volumes:
       - ./logs:/app/logs
       - ./output:/app/output
+    labels:
+      io.casaos.category: "Games"
+      io.casaos.port: "8000"
+      #io.casaos.icon: "https://example.com/icon.png"
+      io.casaos.description: "RPG Dungeon & Encounter Generator with OpenAI"      
