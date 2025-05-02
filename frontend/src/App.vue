@@ -9,13 +9,20 @@
       placeholder="e.g. Sunken Temple of the Frog-God"
     />
 
+    <label for="difficulty-select">Select Difficulty:</label>
+    <select id="difficulty-select" v-model="difficulty">
+      <option value="1-3">Levels 1–3 (Beginner)</option>
+      <option value="4-7">Levels 4–7 (Intermediate)</option>
+      <option value="8+">Levels 8+ (Advanced)</option>
+    </select>
+
     <button @click="generateEncounters">Generate Encounters</button>
 
     <div v-if="loading" class="loading">Loading encounters...</div>
     <div v-if="error" class="error">{{ error }}</div>
 
     <div v-if="encounters.length" class="output">
-      <h2>Encounters for: {{ theme }}</h2>
+      <h2>Encounters for: {{ theme }} (Level {{ difficulty }})</h2>
       <div
         v-for="(encounter, index) in encounters"
         :key="index"
@@ -36,6 +43,7 @@ import { ref } from "vue";
 export default {
   setup() {
     const theme = ref("Undead Crypt");
+    const difficulty = ref("1-3");
     const encounters = ref([]);
     const loading = ref(false);
     const error = ref("");
@@ -49,7 +57,7 @@ export default {
         const res = await fetch("/api/encounters", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ theme: theme.value }),
+          body: JSON.stringify({ theme: theme.value, difficulty: difficulty.value }),
         });
 
         if (!res.ok)
@@ -66,6 +74,7 @@ export default {
 
     return {
       theme,
+      difficulty,
       encounters,
       loading,
       error,
@@ -83,7 +92,8 @@ export default {
   font-family: Georgia, serif;
 }
 
-input {
+input,
+select {
   width: 100%;
   padding: 0.5rem;
   margin: 1rem 0;
