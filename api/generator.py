@@ -9,6 +9,7 @@ client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 SYSTEM_PROMPT = "You are a creative and evocative old-school RPG dungeon master."
 
+
 def generate_room_with_llm(theme="Undead Crypt", model="gpt-3.5-turbo"):
     theme_data = themes.get(theme, {})
     theme_description = theme_data.get("description", "")
@@ -30,7 +31,7 @@ Output format in markdown:
 
 **Loot:** <Interesting treasure or item>
 
-Keep the tone in the style of old-school fantasy. Use at most 150 words.
+Keep the tone in the style of old-school fantasy. Use at most 100 words.
 """
 
     response = client.chat.completions.create(
@@ -47,6 +48,7 @@ Keep the tone in the style of old-school fantasy. Use at most 150 words.
     tokens_used = response.usage.total_tokens
     return content, tokens_used
 
+
 def generate_encounters_with_llm(theme="Unknown Theme", model="gpt-3.5-turbo"):
     user_prompt = f"""
 Generate 4 unique fantasy RPG encounters for the theme: {theme}.
@@ -62,6 +64,7 @@ For each encounter, output:
 - description (2–4 sentences)
 
 Respond in JSON as an array of objects with: title, type, description.
+Wrap only the JSON in your response.
 """
 
     response = client.chat.completions.create(
@@ -77,11 +80,17 @@ Respond in JSON as an array of objects with: title, type, description.
     content = response.choices[0].message.content.strip()
 
     # Strip markdown-style code block if present
-    if content.startswith("```json"):
-        content = re.sub(r"^```json\\s*", "", content)
+    if content.startswith("```json") or content.startswith("```"):
+        content = re.sub(r"^```(?:json)?\\s*", "", content)
         content = re.sub(r"```\\s*$", "", content)
 
     try:
         parsed = json.loads(content)
     except json.JSONDecodeError:
-        parsed = [{"title": "Parse Error", "type": "unknown", "description": content}]
+        parsed = [{
+            "title": "Parse Error",
+            "type": "unknown",
+            "description": content
+        }]
+
+    return parsed, response.usage.total_tokens
