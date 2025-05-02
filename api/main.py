@@ -1,5 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 import os
 from api.generator import generate_room_with_llm
@@ -7,7 +9,7 @@ from api.themes import themes
 
 app = FastAPI()
 
-# Allow frontend dev server
+# CORS settings (veilig voor dev; beperk voor productie!)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -19,11 +21,11 @@ class GenerateRequest(BaseModel):
     theme: str
     count: int = 4
 
-@app.get("/themes")
+@app.get("/api/themes")
 def get_themes():
     return list(themes.keys())
 
-@app.post("/generate")
+@app.post("/api/generate")
 def generate_dungeon(request: GenerateRequest):
     if request.theme not in themes:
         raise HTTPException(status_code=400, detail="Invalid theme")
@@ -35,4 +37,15 @@ def generate_dungeon(request: GenerateRequest):
         results.append(room)
         total_tokens += tokens
 
-    return {"theme": request.theme, "total_tokens": total_tokens, "rooms": results}
+    return {
+        "theme": request.theme,
+        "total_tokens": total_tokens,
+        "rooms": results
+    }
+
+# Serve Vite static frontend
+app.mount("/assets", StaticFiles(directory="frontend/assets"), name="assets")
+
+@app.get("/")
+def serve_index():
+    return FileResponse("frontend/index.html")

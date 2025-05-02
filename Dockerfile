@@ -1,20 +1,28 @@
-# Stage 1: Build frontend
-FROM node:18 AS frontend-builder
+# Stage 1: Build Vite frontend
+FROM node:20 AS frontend-builder
 WORKDIR /app
 COPY frontend/ ./frontend/
 WORKDIR /app/frontend
 RUN npm install && npm run build
 
-# Stage 2: Build backend
+# Stage 2: Build Python backend
 FROM python:3.11-slim
 WORKDIR /app
-COPY api/ ./api/
-COPY --from=frontend-builder /app/frontend/dist/ ./frontend/
-COPY requirements.txt .
+
+# Install runtime dependencies
+COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Expose port
+# Copy backend code
+COPY api/ ./api/
+
+# Copy frontend build
+COPY --from=frontend-builder /app/frontend/dist/ ./frontend/
+
+# Expose port for FastAPI
 EXPOSE 8000
 
-# Start the application
+# Use environment variable for OpenAI key
+ENV OPENAI_API_KEY=not-set
+
 CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"]
