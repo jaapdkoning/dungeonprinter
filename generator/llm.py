@@ -1,7 +1,7 @@
 from openai import OpenAI
 import os
 from datetime import datetime
-from generator.themes import themes
+from api.themes import themes
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 

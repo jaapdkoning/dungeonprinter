@@ -1,7 +1,7 @@
 import os
 from datetime import datetime
 from generator.llm import generate_room_with_llm
-from generator.themes import themes
+from api.themes import themes
 from generator.printer import print_to_markdown
 
 def choose_theme():
