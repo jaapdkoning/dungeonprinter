@@ -9,21 +9,24 @@
 
     <button @click="generateDungeon">Generate Dungeon</button>
 
-    <div v-if="error" class="error">
-      {{ error }}
-    </div>
-
+    <div v-if="error" class="error">{{ error }}</div>
     <div v-if="loading">🧙‍♂️ Generating dungeon...</div>
 
-    <div v-if="rooms.length" class="output">
-      <h2>Generated Dungeon ({{ themeUsed }})</h2>
+    <div v-if="rooms.length" id="pdf-output" class="output">
+      <h2>Generated Dungeon: {{ themeUsed }}</h2>
       <div v-for="(room, index) in rooms" :key="index" v-html="room" class="room"></div>
     </div>
+
+    <button v-if="rooms.length" @click="downloadPDF">📄 Download as PDF</button>
   </div>
 </template>
 
+
 <script>
 import { ref, onMounted } from "vue";
+import { marked } from "marked";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 
 export default {
   setup() {
@@ -55,13 +58,24 @@ export default {
         if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`);
 
         const data = await res.json();
-        rooms.value = data.rooms;
+        rooms.value = data.rooms.map((r) => marked.parse(r));
         themeUsed.value = data.theme;
       } catch (err) {
         error.value = err.message || "Something went wrong.";
       } finally {
         loading.value = false;
       }
+    };
+
+    const downloadPDF = async () => {
+      const el = document.getElementById("pdf-output");
+      const canvas = await html2canvas(el);
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF("p", "mm", "a4");
+      const width = pdf.internal.pageSize.getWidth();
+      const height = (canvas.height * width) / canvas.width;
+      pdf.addImage(imgData, "PNG", 0, 0, width, height);
+      pdf.save(`dungeon_${themeUsed.value.replace(/\\s/g, '_')}.pdf`);
     };
 
     return {
@@ -72,31 +86,33 @@ export default {
       error,
       themeUsed,
       generateDungeon,
+      downloadPDF,
     };
   },
 };
 </script>
+
 
 <style>
 .container {
   max-width: 800px;
   margin: 2rem auto;
   padding: 1rem;
-  font-family: sans-serif;
+  font-family: Georgia, serif;
 }
 button {
   margin-top: 1rem;
   padding: 0.5rem 1rem;
 }
 .room {
-  margin: 1rem 0;
+  margin: 1.5rem 0;
   padding: 1rem;
-  background: #f4f4f4;
-  border-radius: 8px;
-  white-space: pre-wrap;
+  background: #f9f9f9;
+  border-left: 4px solid #999;
 }
-.error {
-  color: red;
-  margin-top: 1rem;
+.output h2 {
+  border-bottom: 2px solid #ccc;
+  padding-bottom: 0.5rem;
+  margin-bottom: 1rem;
 }
 </style>
