@@ -1,97 +1,62 @@
 <template>
   <div class="container">
-    <h1>Dungeon Generator</h1>
+    <h1>🧙‍♂️ Dungeon Encounter Generator</h1>
 
-    <label for="theme-select">Select a Theme:</label>
-    <select id="theme-select" v-model="selectedTheme">
-      <option v-for="theme in themes" :key="theme" :value="theme">{{ theme }}</option>
-    </select>
+    <label for="theme-input">Enter a Theme:</label>
+    <input id="theme-input" v-model="theme" placeholder="e.g. Sunken Temple of the Frog-God" />
 
-    <button @click="generateDungeon">Generate Dungeon</button>
+    <button @click="generateEncounters">Generate Encounters</button>
 
+    <div v-if="loading">Loading encounters...</div>
     <div v-if="error" class="error">{{ error }}</div>
-    <div v-if="loading">🧙‍♂️ Generating dungeon...</div>
 
-    <div v-if="rooms.length" id="pdf-output" class="output">
-      <h2>Generated Dungeon: {{ themeUsed }}</h2>
-      <div v-for="(room, index) in rooms" :key="index" v-html="room" class="room"></div>
+    <div v-if="encounters.length" class="output">
+      <h2>Encounters for: {{ theme }}</h2>
+      <div v-for="(encounter, index) in encounters" :key="index" class="encounter">
+        <h3>{{ encounter.title }} <span class="type">[{{ encounter.type }}]</span></h3>
+        <p>{{ encounter.description }}</p>
+      </div>
     </div>
-
-    <button v-if="rooms.length" @click="downloadPDF">📄 Download as PDF</button>
   </div>
 </template>
 
-
 <script>
-import { ref, onMounted } from "vue";
-import { marked } from "marked";
-import jsPDF from "jspdf";
-import html2canvas from "html2canvas";
+import { ref } from 'vue';
 
 export default {
   setup() {
-    const themes = ref([]);
-    const selectedTheme = ref("");
-    const rooms = ref([]);
+    const theme = ref('Undead Crypt');
+    const encounters = ref([]);
     const loading = ref(false);
-    const error = ref("");
-    const themeUsed = ref("");
+    const error = ref('');
 
-    onMounted(async () => {
-      const res = await fetch("/api/themes");
-      themes.value = await res.json();
-      selectedTheme.value = themes.value[0];
-    });
-
-    const generateDungeon = async () => {
+    const generateEncounters = async () => {
       loading.value = true;
-      error.value = "";
-      rooms.value = [];
+      error.value = '';
+      encounters.value = [];
 
       try {
-        const res = await fetch("/api/generate", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ theme: selectedTheme.value, count: 4 }),
+        const res = await fetch('/api/encounters', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ theme: theme.value })
         });
 
-        if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
 
         const data = await res.json();
-        rooms.value = data.rooms.map((r) => marked.parse(r));
-        themeUsed.value = data.theme;
+        encounters.value = data.encounters;
       } catch (err) {
-        error.value = err.message || "Something went wrong.";
+        error.value = err.message || 'Failed to generate encounters.';
       } finally {
         loading.value = false;
       }
     };
 
-    const downloadPDF = async () => {
-      const el = document.getElementById("pdf-output");
-      const canvas = await html2canvas(el);
-      const imgData = canvas.toDataURL("image/png");
-      const pdf = new jsPDF("p", "mm", "a4");
-      const width = pdf.internal.pageSize.getWidth();
-      const height = (canvas.height * width) / canvas.width;
-      pdf.addImage(imgData, "PNG", 0, 0, width, height);
-      pdf.save(`dungeon_${themeUsed.value.replace(/\\s/g, '_')}.pdf`);
-    };
-
-    return {
-      themes,
-      selectedTheme,
-      rooms,
-      loading,
-      error,
-      themeUsed,
-      generateDungeon,
-      downloadPDF,
-    };
-  },
+    return { theme, encounters, loading, error, generateEncounters };
+  }
 };
 </script>
-
 
 <style>
 .container {
@@ -100,19 +65,32 @@ export default {
   padding: 1rem;
   font-family: Georgia, serif;
 }
+input {
+  width: 100%;
+  padding: 0.5rem;
+  margin: 1rem 0;
+  font-size: 1rem;
+}
 button {
-  margin-top: 1rem;
   padding: 0.5rem 1rem;
+  font-size: 1rem;
+  cursor: pointer;
 }
-.room {
-  margin: 1.5rem 0;
-  padding: 1rem;
+.output {
+  margin-top: 2rem;
+}
+.encounter {
   background: #f9f9f9;
-  border-left: 4px solid #999;
-}
-.output h2 {
-  border-bottom: 2px solid #ccc;
-  padding-bottom: 0.5rem;
+  padding: 1rem;
+  border-left: 4px solid #444;
   margin-bottom: 1rem;
+}
+.type {
+  font-size: 0.9rem;
+  color: #666;
+}
+.error {
+  color: red;
+  margin-top: 1rem;
 }
 </style>

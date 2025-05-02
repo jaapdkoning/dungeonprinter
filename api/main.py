@@ -4,12 +4,12 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 import os
-from api.generator import generate_room_with_llm
+from api.generator import generate_room_with_llm, generate_encounters_with_llm
 from api.themes import themes
 
 app = FastAPI()
 
-# CORS settings (veilig voor dev; beperk voor productie!)
+# Allow frontend dev server
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -20,6 +20,9 @@ app.add_middleware(
 class GenerateRequest(BaseModel):
     theme: str
     count: int = 4
+
+class EncounterRequest(BaseModel):
+    theme: str
 
 @app.get("/api/themes")
 def get_themes():
@@ -37,15 +40,16 @@ def generate_dungeon(request: GenerateRequest):
         results.append(room)
         total_tokens += tokens
 
-    return {
-        "theme": request.theme,
-        "total_tokens": total_tokens,
-        "rooms": results
-    }
+    return {"theme": request.theme, "total_tokens": total_tokens, "rooms": results}
 
-# Serve Vite static frontend
+@app.post("/api/encounters")
+def generate_encounters(request: EncounterRequest):
+    encounters, tokens = generate_encounters_with_llm(theme=request.theme)
+    return {"theme": request.theme, "encounters": encounters, "tokens": tokens}
+
+# Serve static files (Vite build)
 app.mount("/assets", StaticFiles(directory="frontend/assets"), name="assets")
 
 @app.get("/")
-def serve_index():
+def read_index():
     return FileResponse("frontend/index.html")
