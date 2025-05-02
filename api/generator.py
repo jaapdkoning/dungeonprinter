@@ -7,7 +7,7 @@ import re
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-SYSTEM_PROMPT = "You are a creative and evocative old-school RPG dungeon master."
+SYSTEM_PROMPT = "You are a creative and evocative old-school RPG dungeon master that uses the Old School Essentials system."
 
 
 def generate_room_with_llm(theme="Undead Crypt", model="gpt-3.5-turbo"):
@@ -31,7 +31,7 @@ Output format in markdown:
 
 **Loot:** <Interesting treasure or item>
 
-Keep the tone in the style of old-school fantasy. Use at most 100 words.
+Keep the tone in the style of old-school fantasy. Use at most 150 words.
 """
 
     response = client.chat.completions.create(
@@ -41,7 +41,7 @@ Keep the tone in the style of old-school fantasy. Use at most 100 words.
             {"role": "user", "content": user_prompt}
         ],
         temperature=1.0,
-        max_tokens=300,
+        max_tokens=400,
     )
 
     content = response.choices[0].message.content
