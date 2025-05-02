@@ -1,3 +1,4 @@
-markdownify
-faker
+fastapi
+uvicorn[standard]
 openai
+python-dotenv
