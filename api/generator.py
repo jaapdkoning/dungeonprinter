@@ -3,6 +3,7 @@ import os
 from datetime import datetime
 from api.themes import themes
 import json
+import re
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
@@ -73,9 +74,14 @@ Respond in JSON as an array of objects with: title, type, description.
         max_tokens=500,
     )
 
-    content = response.choices[0].message.content
+    content = response.choices[0].message.content.strip()
+
+    # Strip markdown-style code block if present
+    if content.startswith("```json"):
+        content = re.sub(r"^```json\\s*", "", content)
+        content = re.sub(r"```\\s*$", "", content)
+
     try:
         parsed = json.loads(content)
     except json.JSONDecodeError:
         parsed = [{"title": "Parse Error", "type": "unknown", "description": content}]
-    return parsed, response.usage.total_tokens
